@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마켓 연동 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            min-height: 100vh;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 25px;
+            border: 1px solid #e8ecef;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-button {
+            background: #10b981;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .nav-button:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-button:active {
+            transform: scale(0.98);
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        select, input[type="date"] {
+            padding: 9px 14px;
+            border: 1px solid #d1d8dd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #495057;
+        }
+
+        select:hover, input[type="date"]:hover {
+            border-color: #3b82f6;
+        }
+
+        select:focus, input[type="date"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        button {
+            padding: 9px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .kpi-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            background: white;
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+            border: 1px solid #e8ecef;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e8ecef;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            transition: all 0.2s;
+        }
+
+        .kpi-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+
+        .kpi-label {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+            line-height: 1;
+        }
+
+        .kpi-value.rate {
+            color: #10b981;
+        }
+
+        .kpi-unit {
+            font-size: 14px;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .kpi-diff {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .kpi-diff.positive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .kpi-diff.negative {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .kpi-diff.neutral {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e8ecef;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+        }
+
+        .chart-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f3f5;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 380px;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .pie-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+        }
+
+        .pie-chart-wrapper {
+            position: relative;
+            height: 350px;
+        }
+
+        .table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e8ecef;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 700;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+        }
+
+        th:nth-child(n+2) {
+            text-align: center;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+            color: #495057;
+        }
+
+        td:nth-child(n+2) {
+            text-align: center;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rate-cell {
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        tfoot {
+            background: #f1f3f5;
+            font-weight: 700;
+        }
+
+        tfoot td {
+            padding: 14px 16px;
+            border-top: 2px solid #dee2e6;
+            border-bottom: none;
+        }
+
+        @media (max-width: 1100px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 22px;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 12px;
+            }
+
+            .kpi-card {
+                padding: 16px;
+            }
+
+            .kpi-value {
+                font-size: 26px;
+            }
+
+            .pie-charts {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrapper, .pie-chart-wrapper {
+                height: 280px;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            select, input[type="date"], button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <h1 style="margin-bottom: 0;">마켓 연동 대시보드</h1>
+                <a href="sales-dashboard.html" class="nav-button">PRO 마켓 매출 대시보드</a>
+            </div>
+            <div class="filters">
+                <div class="filter-group">
+                    <label>시작일</label>
+                    <input type="date" id="startDateFilter">
+                </div>
+                <div class="filter-group">
+                    <label>종료일</label>
+                    <input type="date" id="endDateFilter">
+                </div>
+                <div class="filter-group">
+                    <label>마켓 선택</label>
+                    <select id="marketFilter">
+                        <option value="">전체 마켓</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button id="searchBtn">조회</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="kpi-section">
+            <div class="section-title">기간 내 지표</div>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">PRO 운영수</div>
+                    <div class="kpi-value" id="proOperating">-</div>
+                    <div class="kpi-unit">개</div>
+                    <div class="kpi-diff" id="diffProOperating"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">마켓 연동신청</div>
+                    <div class="kpi-value" id="marketRequest">-</div>
+                    <div class="kpi-unit">건</div>
+                    <div class="kpi-diff" id="diffMarketRequest"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">마켓 연동완료</div>
+                    <div class="kpi-value" id="marketComplete">-</div>
+                    <div class="kpi-unit">건</div>
+                    <div class="kpi-diff" id="diffMarketComplete"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">이용개시율</div>
+                    <div class="kpi-value rate" id="conversionRate">-</div>
+                    <div class="kpi-unit">%</div>
+                    <div class="kpi-diff" id="diffConversionRate"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">연동율 (몰기준)</div>
+                    <div class="kpi-value rate" id="connectionRate">-</div>
+                    <div class="kpi-unit">%</div>
+                    <div class="kpi-diff" id="diffConnectionRate"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">마켓 해지</div>
+                    <div class="kpi-value" id="marketStop">-</div>
+                    <div class="kpi-unit">건</div>
+                    <div class="kpi-diff" id="diffMarketStop"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="kpi-section">
+            <div class="section-title">누적 지표 (종료일 기준)</div>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">누적 PRO 운영수</div>
+                    <div class="kpi-value" id="cumProOperating">-</div>
+                    <div class="kpi-unit">개</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">누적 마켓 연동신청</div>
+                    <div class="kpi-value" id="cumMarketRequest">-</div>
+                    <div class="kpi-unit">건</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">누적 마켓 연동완료</div>
+                    <div class="kpi-value" id="cumMarketComplete">-</div>
+                    <div class="kpi-unit">건</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">누적 이용개시율</div>
+                    <div class="kpi-value rate" id="cumConversionRate">-</div>
+                    <div class="kpi-unit">%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">누적 연동율 (몰기준)</div>
+                    <div class="kpi-value rate" id="cumConnectionRate">-</div>
+                    <div class="kpi-unit">%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">누적 마켓 해지</div>
+                    <div class="kpi-value" id="cumMarketStop">-</div>
+                    <div class="kpi-unit">건</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-container">
+                <div class="chart-title">일별 PRO 운영수 및 마켓 연동 추이</div>
+                <div class="chart-wrapper">
+                    <canvas id="chart1"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">일별 마켓 연동 및 해지 추이</div>
+                <div class="chart-wrapper">
+                    <canvas id="chart2"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="pie-charts">
+            <div class="chart-container">
+                <div class="chart-title">마켓별 계정 연동 분포</div>
+                <div class="pie-chart-wrapper">
+                    <canvas id="pieChart1"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">마켓별 계정 해지 분포</div>
+                <div class="pie-chart-wrapper">
+                    <canvas id="pieChart2"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="chart-title">마켓별 통계</div>
+            <div id="marketStatsTable">
+                <div style="text-align: center; color: #9ca3af; padding: 20px;">데이터 로딩 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 현재 호스트에 따라 API URL 자동 설정
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api'
+            : `http://${window.location.hostname}:3001/api`;
+
+        let chart1, chart2, pieChart1, pieChart2;
+
+        // 증감 표시 함수 (개수용)
+        function updateDiff(elementId, diff) {
+            const element = document.getElementById(elementId);
+            if (diff === undefined || diff === null) {
+                element.textContent = '';
+                element.className = 'kpi-diff';
+                return;
+            }
+
+            if (diff === 0) {
+                element.textContent = '0';
+                element.className = 'kpi-diff neutral';
+                return;
+            }
+
+            const prefix = diff > 0 ? '+' : '';
+            element.textContent = `${prefix}${diff}`;
+            element.className = diff > 0 ? 'kpi-diff positive' : 'kpi-diff negative';
+        }
+
+        // 증감 표시 함수 (율용)
+        function updateDiffRate(elementId, diff) {
+            const element = document.getElementById(elementId);
+            if (diff === undefined || diff === null) {
+                element.textContent = '';
+                element.className = 'kpi-diff';
+                return;
+            }
+
+            if (diff === 0) {
+                element.textContent = '0%';
+                element.className = 'kpi-diff neutral';
+                return;
+            }
+
+            const prefix = diff > 0 ? '+' : '';
+            element.textContent = `${prefix}${diff}%`;
+            element.className = diff > 0 ? 'kpi-diff positive' : 'kpi-diff negative';
+        }
+
+        // 날짜 초기화 (최근 14일)
+        function initializeDates() {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() - 1);
+
+            const startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 13);
+
+            document.getElementById('startDateFilter').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDateFilter').value = endDate.toISOString().split('T')[0];
+        }
+
+        // 마켓 목록 로드
+        async function loadMarkets() {
+            try {
+                const response = await fetch(`${API_BASE}/markets`);
+                const markets = await response.json();
+
+                const select = document.getElementById('marketFilter');
+                markets.forEach(market => {
+                    const option = document.createElement('option');
+                    option.value = market.code;
+                    option.textContent = market.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('마켓 목록 로드 실패:', error);
+            }
+        }
+
+        // KPI 데이터 로드
+        async function loadKPI() {
+            try {
+                const startDate = document.getElementById('startDateFilter').value;
+                const endDate = document.getElementById('endDateFilter').value;
+                const marketCode = document.getElementById('marketFilter').value;
+
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                if (marketCode) params.append('marketCode', marketCode);
+
+                const response = await fetch(`${API_BASE}/kpi?${params}`);
+                const data = await response.json();
+
+                document.getElementById('proOperating').textContent = data.proOperating.toLocaleString();
+                document.getElementById('marketRequest').textContent = data.marketRequest.toLocaleString();
+                document.getElementById('marketComplete').textContent = data.marketComplete.toLocaleString();
+
+                // 이용개시율 계산 (연동완료 / 연동신청 * 100)
+                const conversionRate = data.marketRequest > 0
+                    ? Math.round((data.marketComplete / data.marketRequest) * 100)
+                    : 0;
+                document.getElementById('conversionRate').textContent = conversionRate;
+
+                document.getElementById('connectionRate').textContent = data.connectionRate;
+                document.getElementById('marketStop').textContent = data.marketStop.toLocaleString();
+
+                // 동기대비 표시
+                updateDiff('diffProOperating', data.diffProOperating);
+                updateDiff('diffMarketRequest', data.diffMarketRequest);
+                updateDiff('diffMarketComplete', data.diffMarketComplete);
+
+                // 이용개시율 동기대비 (현재 - 이전)
+                const prevConversionRate = data.prevMarketRequest > 0
+                    ? Math.round((data.prevMarketComplete / data.prevMarketRequest) * 100)
+                    : 0;
+                const diffConversionRate = conversionRate - prevConversionRate;
+                updateDiffRate('diffConversionRate', diffConversionRate);
+
+                updateDiffRate('diffConnectionRate', data.diffConnectionRate);
+                updateDiff('diffMarketStop', data.diffMarketStop);
+            } catch (error) {
+                console.error('KPI 로드 실패:', error);
+            }
+        }
+
+        // 누적 KPI 데이터 로드
+        async function loadCumulativeKPI() {
+            try {
+                const endDate = document.getElementById('endDateFilter').value;
+                const marketCode = document.getElementById('marketFilter').value;
+
+                const params = new URLSearchParams();
+                if (endDate) params.append('endDate', endDate);
+                if (marketCode) params.append('marketCode', marketCode);
+
+                const response = await fetch(`${API_BASE}/cumulative-kpi?${params}`);
+                const data = await response.json();
+
+                document.getElementById('cumProOperating').textContent = data.proOperating.toLocaleString();
+                document.getElementById('cumMarketRequest').textContent = data.marketRequest.toLocaleString();
+                document.getElementById('cumMarketComplete').textContent = data.marketComplete.toLocaleString();
+
+                // 누적 이용개시율 계산 (연동완료 / 연동신청 * 100)
+                const cumConversionRate = data.marketRequest > 0
+                    ? Math.round((data.marketComplete / data.marketRequest) * 100)
+                    : 0;
+                document.getElementById('cumConversionRate').textContent = cumConversionRate;
+
+                document.getElementById('cumConnectionRate').textContent = data.connectionRate;
+                document.getElementById('cumMarketStop').textContent = data.marketStop.toLocaleString();
+            } catch (error) {
+                console.error('누적 KPI 로드 실패:', error);
+            }
+        }
+
+        // 일별 추이 데이터 로드
+        async function loadDailyTrend() {
+            try {
+                const startDate = document.getElementById('startDateFilter').value;
+                const endDate = document.getElementById('endDateFilter').value;
+                const marketCode = document.getElementById('marketFilter').value;
+
+                const params = new URLSearchParams();
+                params.append('startDate', startDate);
+                params.append('endDate', endDate);
+                if (marketCode) params.append('marketCode', marketCode);
+
+                const response = await fetch(`${API_BASE}/daily-trend?${params}`);
+                const data = await response.json();
+
+                const labels = data.map(d => {
+                    const date = new Date(d.date);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                });
+
+                // 차트 1
+                if (chart1) chart1.destroy();
+                const ctx1 = document.getElementById('chart1').getContext('2d');
+                chart1 = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'PRO 운영수',
+                                data: data.map(d => d.proSignup),
+                                backgroundColor: '#3b82f6',
+                                borderRadius: 4
+                            },
+                            {
+                                label: '마켓 연동 신청수',
+                                data: data.map(d => d.marketRequest),
+                                backgroundColor: '#8b5cf6',
+                                borderRadius: 4
+                            },
+                            {
+                                label: '마켓 연동 완료수',
+                                data: data.map(d => d.marketComplete),
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: { size: 13, weight: '600' },
+                                    padding: 15,
+                                    color: '#4b5563'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#f3f4f6', drawBorder: false },
+                                ticks: { font: { size: 12 }, color: '#6b7280' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11 }, color: '#6b7280' }
+                            }
+                        }
+                    }
+                });
+
+                // 차트 2
+                if (chart2) chart2.destroy();
+                const ctx2 = document.getElementById('chart2').getContext('2d');
+                chart2 = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '마켓 연동 신청수',
+                                data: data.map(d => d.marketRequest),
+                                backgroundColor: '#8b5cf6',
+                                borderRadius: 4
+                            },
+                            {
+                                label: '마켓 연동 완료수',
+                                data: data.map(d => d.marketComplete),
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            },
+                            {
+                                label: '마켓 해지수',
+                                data: data.map(d => d.marketStop),
+                                backgroundColor: '#ef4444',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: { size: 13, weight: '600' },
+                                    padding: 15,
+                                    color: '#4b5563'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#f3f4f6', drawBorder: false },
+                                ticks: { font: { size: 12 }, color: '#6b7280' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11 }, color: '#6b7280' }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('일별 추이 로드 실패:', error);
+            }
+        }
+
+        // 마켓별 통계 데이터 로드
+        async function loadMarketStats() {
+            try {
+                const startDate = document.getElementById('startDateFilter').value;
+                const endDate = document.getElementById('endDateFilter').value;
+
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+
+                // 마켓별 통계와 전체 누적 KPI를 병렬로 가져오기
+                const [marketStatsResponse, cumulativeKpiResponse] = await Promise.all([
+                    fetch(`${API_BASE}/market-stats?${params}&_t=${Date.now()}`),
+                    fetch(`${API_BASE}/cumulative-kpi?${params}&_t=${Date.now()}`)
+                ]);
+
+                const data = await marketStatsResponse.json();
+                const cumulativeKpi = await cumulativeKpiResponse.json();
+
+                const container = document.getElementById('marketStatsTable');
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 20px;">데이터가 없습니다.</div>';
+                    return;
+                }
+
+                // 누적 연동수 기준으로 정렬
+                const sortedData = data.sort((a, b) => b.cumOperationStartCount - a.cumOperationStartCount);
+
+                // 최대값 구하기 (막대 그래프 비율 계산용)
+                const maxRequest = Math.max(...sortedData.map(d => d.requestCount));
+                const maxOperation = Math.max(...sortedData.map(d => d.operationStartCount));
+                const maxStop = Math.max(...sortedData.map(d => d.stopCount));
+                const maxCumRequest = Math.max(...sortedData.map(d => d.cumRequestCount));
+                const maxCumOperation = Math.max(...sortedData.map(d => d.cumOperationStartCount));
+                const maxCumStop = Math.max(...sortedData.map(d => d.cumStopCount));
+
+                container.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #f8f9fa;">
+                            <tr>
+                                <th rowspan="2" style="padding: 10px 12px; text-align: left; font-weight: 700; border-bottom: 2px solid #dee2e6; width: 110px; vertical-align: middle; font-size: 14px;">마켓</th>
+                                <th colspan="4" style="padding: 8px 12px; text-align: center; font-weight: 700; border-bottom: 1px solid #dee2e6; background: #f0f4ff; font-size: 13px;">기간별</th>
+                                <th colspan="4" style="padding: 8px 12px; text-align: center; font-weight: 700; border-bottom: 1px solid #dee2e6; background: #fff4e6; font-size: 13px;">누적 (종료일 기준)</th>
+                            </tr>
+                            <tr>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #f0f4ff; font-size: 12px;">신청/연동</th>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #f0f4ff; width: 80px; font-size: 12px;">이용개시율</th>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #f0f4ff; width: 60px; font-size: 12px;">소요시간</th>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #f0f4ff; width: 60px; font-size: 12px;">해지</th>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #fff4e6; font-size: 12px;">신청/연동</th>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #fff4e6; width: 80px; font-size: 12px;">이용개시율</th>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #fff4e6; width: 60px; font-size: 12px;">소요시간</th>
+                                <th style="padding: 8px 10px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; background: #fff4e6; width: 60px; font-size: 12px;">해지</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sortedData.map((market, index) => {
+                                const periodConversionRate = market.requestCount > 0
+                                    ? Math.round((market.operationStartCount / market.requestCount) * 100)
+                                    : 0;
+                                const cumConversionRate = market.cumRequestCount > 0
+                                    ? Math.round((market.cumOperationStartCount / market.cumRequestCount) * 100)
+                                    : 0;
+
+                                const periodRequestPercent = maxRequest > 0 ? (market.requestCount / maxRequest * 100) : 0;
+                                const periodOperationPercent = maxOperation > 0 ? (market.operationStartCount / maxOperation * 100) : 0;
+                                const periodStopPercent = maxStop > 0 ? (market.stopCount / maxStop * 100) : 0;
+
+                                const cumRequestPercent = maxCumRequest > 0 ? (market.cumRequestCount / maxCumRequest * 100) : 0;
+                                const cumOperationPercent = maxCumOperation > 0 ? (market.cumOperationStartCount / maxCumOperation * 100) : 0;
+                                const cumStopPercent = maxCumStop > 0 ? (market.cumStopCount / maxCumStop * 100) : 0;
+
+                                return `
+                                    <tr style="border-bottom: 1px solid #e9ecef;">
+                                        <td style="padding: 10px 12px; font-weight: 600; color: #1a1a1a; font-size: 13px;">${market.marketName}</td>
+                                        <!-- 기간별 -->
+                                        <td style="padding: 8px 10px; background: #fafbff;">
+                                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                                                <span style="color: #8b5cf6; font-weight: 600;">${market.requestCount.toLocaleString()}</span>
+                                                <span style="margin: 0 4px; color: #d1d5db;">/</span>
+                                                <span style="color: #10b981; font-weight: 600;">${market.operationStartCount.toLocaleString()}</span>
+                                            </div>
+                                            <div style="display: flex; gap: 2px; height: 6px;">
+                                                <div style="flex: ${market.requestCount}; background: #c4b5fd; border-radius: 2px;"></div>
+                                                <div style="flex: ${market.operationStartCount}; background: #6ee7b7; border-radius: 2px;"></div>
+                                                <div style="flex: ${Math.max(maxRequest - market.requestCount, 0)}; background: #f3f4f6; border-radius: 2px;"></div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px 10px; text-align: center; background: #fafbff;">
+                                            <span style="background: ${periodConversionRate >= 80 ? '#dcfce7' : periodConversionRate >= 60 ? '#fef3c7' : '#fee2e2'}; color: ${periodConversionRate >= 80 ? '#166534' : periodConversionRate >= 60 ? '#92400e' : '#991b1b'}; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">
+                                                ${periodConversionRate}%
+                                            </span>
+                                        </td>
+                                        <td style="padding: 8px 10px; text-align: center; background: #fafbff; font-size: 12px; font-weight: 600; color: #6b7280;">
+                                            ${market.avgDaysToStart || 0}d
+                                        </td>
+                                        <td style="padding: 8px 10px; text-align: center; background: #fafbff; font-size: 12px; font-weight: 600; color: #ef4444;">
+                                            ${market.stopCount.toLocaleString()}
+                                        </td>
+                                        <!-- 누적 -->
+                                        <td style="padding: 8px 10px; background: #fffbf0;">
+                                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                                                <span style="color: #8b5cf6; font-weight: 600;">${market.cumRequestCount.toLocaleString()}</span>
+                                                <span style="margin: 0 4px; color: #d1d5db;">/</span>
+                                                <span style="color: #10b981; font-weight: 600;">${market.cumOperationStartCount.toLocaleString()}</span>
+                                            </div>
+                                            <div style="display: flex; gap: 2px; height: 6px;">
+                                                <div style="flex: ${market.cumRequestCount}; background: #c4b5fd; border-radius: 2px;"></div>
+                                                <div style="flex: ${market.cumOperationStartCount}; background: #6ee7b7; border-radius: 2px;"></div>
+                                                <div style="flex: ${Math.max(maxCumRequest - market.cumRequestCount, 0)}; background: #fef3c7; border-radius: 2px;"></div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px 10px; text-align: center; background: #fffbf0;">
+                                            <span style="background: ${cumConversionRate >= 80 ? '#dcfce7' : cumConversionRate >= 60 ? '#fef3c7' : '#fee2e2'}; color: ${cumConversionRate >= 80 ? '#166534' : cumConversionRate >= 60 ? '#92400e' : '#991b1b'}; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">
+                                                ${cumConversionRate}%
+                                            </span>
+                                        </td>
+                                        <td style="padding: 8px 10px; text-align: center; background: #fffbf0; font-size: 12px; font-weight: 600; color: #6b7280;">
+                                            ${market.cumAvgDaysToStart || 0}d
+                                        </td>
+                                        <td style="padding: 8px 10px; text-align: center; background: #fffbf0; font-size: 12px; font-weight: 600; color: #ef4444;">
+                                            ${market.cumStopCount.toLocaleString()}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                        <tfoot style="background: #f1f3f5; font-weight: 700;">
+                            ${(() => {
+                                // 기간별 합계 계산
+                                const periodTotals = sortedData.reduce((acc, market) => {
+                                    acc.requestCount += market.requestCount;
+                                    acc.operationStartCount += market.operationStartCount;
+                                    acc.stopCount += market.stopCount;
+                                    return acc;
+                                }, {
+                                    requestCount: 0,
+                                    operationStartCount: 0,
+                                    stopCount: 0
+                                });
+
+                                const periodConversionRate = periodTotals.requestCount > 0
+                                    ? Math.round((periodTotals.operationStartCount / periodTotals.requestCount) * 100)
+                                    : 0;
+
+                                // cumulative-kpi API에서 가져온 전체 누적 합계 사용
+                                const cumTotals = {
+                                    cumRequestCount: cumulativeKpi.marketRequest,
+                                    cumOperationStartCount: cumulativeKpi.marketComplete,
+                                    cumStopCount: cumulativeKpi.marketStop
+                                };
+
+                                const cumConversionRate = cumTotals.cumRequestCount > 0
+                                    ? Math.round((cumTotals.cumOperationStartCount / cumTotals.cumRequestCount) * 100)
+                                    : 0;
+
+                                return `
+                                    <tr>
+                                        <td style="padding: 10px 12px; border-top: 2px solid #dee2e6; font-weight: 700; font-size: 13px;">합계</td>
+                                        <!-- 기간별 합계 -->
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; background: #f0f4ff;">
+                                            <div style="font-size: 13px; font-weight: 700;">
+                                                <span style="color: #8b5cf6;">${periodTotals.requestCount.toLocaleString()}</span>
+                                                <span style="margin: 0 4px; color: #d1d5db;">/</span>
+                                                <span style="color: #10b981;">${periodTotals.operationStartCount.toLocaleString()}</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; text-align: center; background: #f0f4ff;">
+                                            <span style="background: ${periodConversionRate >= 80 ? '#dcfce7' : periodConversionRate >= 60 ? '#fef3c7' : '#fee2e2'}; color: ${periodConversionRate >= 80 ? '#166534' : periodConversionRate >= 60 ? '#92400e' : '#991b1b'}; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 12px;">
+                                                ${periodConversionRate}%
+                                            </span>
+                                        </td>
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; text-align: center; background: #f0f4ff; font-size: 13px; font-weight: 700; color: #6b7280;">
+                                            -
+                                        </td>
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; text-align: center; background: #f0f4ff; font-size: 13px; font-weight: 700; color: #ef4444;">
+                                            ${periodTotals.stopCount.toLocaleString()}
+                                        </td>
+                                        <!-- 누적 합계 -->
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; background: #fff4e6;">
+                                            <div style="font-size: 13px; font-weight: 700;">
+                                                <span style="color: #8b5cf6;">${cumTotals.cumRequestCount.toLocaleString()}</span>
+                                                <span style="margin: 0 4px; color: #d1d5db;">/</span>
+                                                <span style="color: #10b981;">${cumTotals.cumOperationStartCount.toLocaleString()}</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; text-align: center; background: #fff4e6;">
+                                            <span style="background: ${cumConversionRate >= 80 ? '#dcfce7' : cumConversionRate >= 60 ? '#fef3c7' : '#fee2e2'}; color: ${cumConversionRate >= 80 ? '#166534' : cumConversionRate >= 60 ? '#92400e' : '#991b1b'}; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 12px;">
+                                                ${cumConversionRate}%
+                                            </span>
+                                        </td>
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; text-align: center; background: #fff4e6; font-size: 13px; font-weight: 700; color: #6b7280;">
+                                            -
+                                        </td>
+                                        <td style="padding: 8px 10px; border-top: 2px solid #dee2e6; text-align: center; background: #fff4e6; font-size: 13px; font-weight: 700; color: #ef4444;">
+                                            ${cumTotals.cumStopCount.toLocaleString()}
+                                        </td>
+                                    </tr>
+                                `;
+                            })()}
+                        </tfoot>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('마켓별 통계 로드 실패:', error);
+                const container = document.getElementById('marketStatsTable');
+                container.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 20px;">데이터 로드에 실패했습니다.</div>';
+            }
+        }
+
+        // 마켓별 분포 데이터 로드
+        async function loadMarketDistribution() {
+            try {
+                const startDate = document.getElementById('startDateFilter').value;
+                const endDate = document.getElementById('endDateFilter').value;
+
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+
+                const response = await fetch(`${API_BASE}/market-distribution?${params}`);
+                const data = await response.json();
+
+                const colors = [
+                    '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444',
+                    '#06b6d4', '#ec4899', '#f97316', '#84cc16', '#6366f1',
+                    '#14b8a6', '#a855f7', '#f43f5e', '#0ea5e9', '#d946ef'
+                ];
+
+                // 원형 차트 1
+                if (pieChart1) pieChart1.destroy();
+                const ctx3 = document.getElementById('pieChart1').getContext('2d');
+                pieChart1 = new Chart(ctx3, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.connection.map(d => d.marketName),
+                        datasets: [{
+                            data: data.connection.map(d => d.count),
+                            backgroundColor: colors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    font: { size: 12 },
+                                    padding: 12,
+                                    color: '#4b5563',
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            const dataset = data.datasets[0];
+                                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                                            return data.labels.map((label, i) => {
+                                                const value = dataset.data[i];
+                                                const percentage = ((value / total) * 100).toFixed(1);
+                                                return {
+                                                    text: `${label} (${percentage}%)`,
+                                                    fillStyle: dataset.backgroundColor[i],
+                                                    hidden: false,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value}개 (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 원형 차트 2
+                if (pieChart2) pieChart2.destroy();
+                const ctx4 = document.getElementById('pieChart2').getContext('2d');
+                pieChart2 = new Chart(ctx4, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.stop.map(d => d.marketName),
+                        datasets: [{
+                            data: data.stop.map(d => d.count),
+                            backgroundColor: colors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    font: { size: 12 },
+                                    padding: 12,
+                                    color: '#4b5563',
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            const dataset = data.datasets[0];
+                                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                                            return data.labels.map((label, i) => {
+                                                const value = dataset.data[i];
+                                                const percentage = ((value / total) * 100).toFixed(1);
+                                                return {
+                                                    text: `${label} (${percentage}%)`,
+                                                    fillStyle: dataset.backgroundColor[i],
+                                                    hidden: false,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value}개 (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('마켓별 분포 로드 실패:', error);
+            }
+        }
+
+        // 전체 데이터 로드
+        function loadAllData() {
+            loadKPI();
+            loadCumulativeKPI();
+            loadDailyTrend();
+            loadMarketDistribution();
+            loadMarketStats();
+        }
+
+        // 이벤트 리스너
+        document.getElementById('searchBtn').addEventListener('click', loadAllData);
+
+        // 초기화
+        window.addEventListener('load', async () => {
+            initializeDates();
+            await loadMarkets();
+            loadAllData();
+        });
+    </script>
+</body>
+</html>
